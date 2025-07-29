@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Alert,
   TextField,
+  Paper,
 } from "@mui/material";
 import { getAllItems, saveInvoice, payInvoice } from "../services/api";
 import PropTypes from "prop-types";
@@ -38,6 +39,12 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
   const [items, setItems] = useState([]);
   const [selectedItemSku, setSelectedItemSku] = useState(PLACEHOLDER_SKU_VALUE);
+  const [itemsPagination, setItemsPagination] = useState({
+    currentPage: 0,
+    totalPages: 1
+  });
+  const [loadingItems, setLoadingItems] = useState(false);
+
   const [selectedInvoiceItems, setSelectedInvoiceItems] = useState([]);
   const [currentInvoiceTotalPrice, setCurrentInvoiceTotalPrice] = useState(null);
 
@@ -47,41 +54,57 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
   const [payingInvoice, setPayingInvoice] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
 
-  const [loadingItems, setLoadingItems] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (openAddDialog) {
-      fetchItems();
-      setSelectedItemSku(PLACEHOLDER_SKU_VALUE);
-    }
-  }, [openAddDialog]);
-
-  const fetchItems = useCallback(async () => {
+  // Fetch items with pagination (similar to Home component)
+  const fetchItems = useCallback(async (pageNo = 0) => {
     setLoadingItems(true);
     setError(null);
     try {
-      const response = await getAllItems();
-      const validItems = response.data.items?.filter(item => item.sku && typeof item.sku === 'string') || [];
+      const response = await getAllItems(pageNo);
+      const validItems = (response.data.items || response.data)?.filter(item => item.sku && typeof item.sku === 'string') || [];
       setItems(validItems);
+      setItemsPagination({
+        currentPage: response.data.currentPage || pageNo,
+        totalPages: response.data.totalPages || 1
+      });
     } catch (err) {
       console.error("Failed to fetch items:", err);
       setError("Failed to load items. Please try again.");
+      setItems([]);
     } finally {
       setLoadingItems(false);
     }
   }, []);
 
+  // Handle page change for items
+  const handleItemsPageChange = (newPageNo) => {
+    if (newPageNo >= 0 && newPageNo < itemsPagination.totalPages) {
+      fetchItems(newPageNo);
+      setSelectedItemSku(PLACEHOLDER_SKU_VALUE); // Reset selection when page changes
+    }
+  };
+
+  // Get page numbers array (similar to Home component)
+  const getItemsPageNumbers = () => {
+    return Array.from({ length: itemsPagination.totalPages }, (_, i) => i);
+  };
+
   const handleOpenAddDialog = (invoiceId) => {
     setSelectedInvoiceId(invoiceId);
     setSelectedItemSku(PLACEHOLDER_SKU_VALUE);
+    setError(null);
     setOpenAddDialog(true);
+    // Fetch first page of items when dialog opens
+    fetchItems(0);
   };
 
   const handleCloseAddDialog = () => {
     setOpenAddDialog(false);
     setSelectedInvoiceId(null);
     setSelectedItemSku(PLACEHOLDER_SKU_VALUE);
+    setItems([]);
+    setItemsPagination({ currentPage: 0, totalPages: 1 });
     setError(null);
   };
 
@@ -114,7 +137,6 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
 
   const handleOpenPayDialog = (invoice) => {
     setSelectedInvoiceForPayment(invoice);
-    // Automatically set paymentAmount to totalInvoicePrice
     setPaymentAmount(invoice.totalInvoicePrice?.toFixed(2) || '0.00');
     setPaymentMethod(PLACEHOLDER_PAYMENT_METHOD);
     setError(null);
@@ -124,7 +146,7 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
   const handleClosePayDialog = () => {
     setOpenPayDialog(false);
     setSelectedInvoiceForPayment(null);
-    setPaymentAmount(""); // Reset to empty when closing
+    setPaymentAmount("");
     setPaymentMethod(PLACEHOLDER_PAYMENT_METHOD);
     setError(null);
     setPayingInvoice(false);
@@ -136,7 +158,7 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
       return;
     }
 
-    const amountNum = parseFloat(selectedInvoiceForPayment.totalInvoicePrice); // Use totalInvoicePrice
+    const amountNum = parseFloat(selectedInvoiceForPayment.totalInvoicePrice);
     if (isNaN(amountNum) || amountNum <= 0) {
       setError("Invoice total amount is invalid. Cannot process payment.");
       return;
@@ -150,7 +172,6 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
         paymentMethod: paymentMethod
       };
 
-      // Corrected: Use selectedInvoiceForPayment.id directly
       const response = await payInvoice(selectedInvoiceForPayment.id, paymentInfoPayload);
 
       const updatedInvoiceForFrontend = {
@@ -158,7 +179,7 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
         invoicePaymentStatus: "PAID",
         paymentInfo: {
             ...paymentInfoPayload,
-            transactionDateTime: new Date().toISOString(), // Client-side timestamp for immediate UI update
+            transactionDateTime: new Date().toISOString(),
         },
       };
 
@@ -243,10 +264,16 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
         </Box>
       ))}
 
-      {/* --- Add Item Dialog --- */}
-      <Dialog open={openAddDialog} onClose={handleCloseAddDialog} fullWidth>
+      {/* --- UPDATED Add Item Dialog with Paginated Dropdown --- */}
+      <Dialog open={openAddDialog} onClose={handleCloseAddDialog} fullWidth maxWidth="sm">
         <DialogTitle>Select an Item to Add</DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
           {loadingItems ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 2 }}>
               <CircularProgress size={24} />
@@ -254,27 +281,88 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
             </Box>
           ) : (
             <>
-              {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {error}
-                </Alert>
-              )}
               <Select
                 fullWidth
                 value={selectedItemSku}
                 onChange={(e) => setSelectedItemSku(e.target.value)}
                 displayEmpty
                 disabled={items.length === 0 && !error}
+                sx={{ mb: 2 }}
               >
                 <MenuItem value={PLACEHOLDER_SKU_VALUE} disabled>
                   {items.length === 0 && !error ? "No items available" : "Select an item"}
                 </MenuItem>
                 {items.map((item) => (
                   <MenuItem key={item.id} value={String(item.sku)}>
-                    {item.description} — {item.sku}
+                    <Box>
+                      <Typography variant="body1" fontWeight="bold">
+                        {item.sku} - {item.description}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        Price: ${item.price?.toFixed(2) || '0.00'}
+                      </Typography>
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>
+
+              {/* Pagination Controls (inspired by Home component) */}
+              {itemsPagination.totalPages > 1 && (
+                <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2, textAlign: 'center' }}>
+                    Page {itemsPagination.currentPage + 1} of {itemsPagination.totalPages}
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+                    <Button
+                      disabled={itemsPagination.currentPage === 0}
+                      onClick={() => handleItemsPageChange(itemsPagination.currentPage - 1)}
+                      variant="outlined"
+                      size="small"
+                    >
+                      ← Prev
+                    </Button>
+
+                    {getItemsPageNumbers().map((pageNumber) => (
+                      <Button
+                        key={pageNumber}
+                        variant={itemsPagination.currentPage === pageNumber ? "contained" : "outlined"}
+                        onClick={() => handleItemsPageChange(pageNumber)}
+                        sx={{ minWidth: '40px' }}
+                        size="small"
+                      >
+                        {pageNumber + 1}
+                      </Button>
+                    ))}
+
+                    <Button
+                      disabled={itemsPagination.currentPage >= itemsPagination.totalPages - 1}
+                      onClick={() => handleItemsPageChange(itemsPagination.currentPage + 1)}
+                      variant="outlined"
+                      size="small"
+                    >
+                      Next →
+                    </Button>
+                  </Box>
+                </Paper>
+              )}
+
+              {/* Show current selection info */}
+              {selectedItemSku !== PLACEHOLDER_SKU_VALUE && (
+                <Box sx={{ mt: 2, p: 2, backgroundColor: '#e3f2fd', borderRadius: 1 }}>
+                  {(() => {
+                    const selectedItem = items.find(item => String(item.sku) === selectedItemSku);
+                    return selectedItem ? (
+                      <>
+                        <Typography variant="subtitle2" color="primary">Selected Item:</Typography>
+                        <Typography variant="body2"><strong>SKU:</strong> {selectedItem.sku}</Typography>
+                        <Typography variant="body2"><strong>Description:</strong> {selectedItem.description}</Typography>
+                        <Typography variant="body2"><strong>Price:</strong> ${selectedItem.price?.toFixed(2) || '0.00'}</Typography>
+                      </>
+                    ) : null;
+                  })()}
+                </Box>
+              )}
             </>
           )}
         </DialogContent>
@@ -285,7 +373,7 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
             onClick={handleAdd}
             disabled={selectedItemSku === PLACEHOLDER_SKU_VALUE || loadingItems}
           >
-            Add
+            Add to Invoice
           </Button>
         </DialogActions>
       </Dialog>
@@ -336,7 +424,6 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
             type="text"
             fullWidth
             value={paymentAmount}
-            // The amount is now read-only as it's the invoice total
             InputProps={{
               readOnly: true,
             }}
@@ -371,7 +458,7 @@ const Invoices = ({ invoices = [], onAddItemToInvoice, onInvoicePaid }) => {
             variant="contained"
             color="primary"
             onClick={handlePayInvoice}
-            disabled={paymentMethod === PLACEHOLDER_PAYMENT_METHOD || payingInvoice} // Only validate method now
+            disabled={paymentMethod === PLACEHOLDER_PAYMENT_METHOD || payingInvoice}
           >
             {payingInvoice ? <CircularProgress size={24} /> : "Process Payment"}
           </Button>

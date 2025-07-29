@@ -1,6 +1,6 @@
 package it.arrive.invoicesystem.lineitem.services;
 
-import it.arrive.invoicesystem.invoice.dto.InvoiceLineItem;
+import it.arrive.invoicesystem.lineitem.dto.BasicLineItemWithDescAndPrice;
 import it.arrive.invoicesystem.lineitem.dto.LineItemsResponse;
 import it.arrive.invoicesystem.lineitem.model.LineItem;
 
@@ -19,10 +19,10 @@ public interface LineItemService {
      *     <li>Persists the line item in the database.</li>
      * </ul>
      *
-     * @param lineItem the {@link InvoiceLineItem} to create
+     * @param lineItem the {@link BasicLineItemWithDescAndPrice} to create
      * @return the saved {@link LineItem} entity
      */
-    LineItem createLineItem( InvoiceLineItem lineItem );
+    LineItem createLineItem( BasicLineItemWithDescAndPrice lineItem );
 
     /**
      * Retrieves a paginated list of line items.

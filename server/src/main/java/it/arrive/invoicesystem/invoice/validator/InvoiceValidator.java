@@ -1,6 +1,6 @@
 package it.arrive.invoicesystem.invoice.validator;
 
-import it.arrive.invoicesystem.common.util.Utils;
+import it.arrive.invoicesystem.common.util.ValidationsUtils;
 import it.arrive.invoicesystem.invoice.model.PaymentMethod;
 import it.arrive.invoicesystem.lineitem.model.LineItem;
 import org.apache.commons.lang3.StringUtils;
@@ -18,15 +18,11 @@ public class InvoiceValidator {
     );
 
     public void validatePageNumber( int pageNumber ) {
-        Utils.validatePageNumber( pageNumber );
+        ValidationsUtils.validatePageNumber( pageNumber );
     }
 
     public void validateItemSkuCode( String itemSkuCode ) {
-        if ( StringUtils.isBlank( itemSkuCode ) ) {
-            throw new IllegalArgumentException(
-                    "Item SKU code '%s' is invalid. Item SKU code cannot be blank".formatted( itemSkuCode )
-            );
-        }
+        ValidationsUtils.validateItemSkuCode( itemSkuCode );
     }
 
     public void validatePaymentMethod( PaymentMethod paymentMethod ) {

@@ -1,7 +1,7 @@
 package it.arrive.invoicesystem.lineitem.services.impl;
 
 import it.arrive.invoicesystem.config.PaginationProperties;
-import it.arrive.invoicesystem.invoice.dto.InvoiceLineItem;
+import it.arrive.invoicesystem.lineitem.dto.BasicLineItemWithDescAndPrice;
 import it.arrive.invoicesystem.lineitem.dto.LineItemsResponse;
 import it.arrive.invoicesystem.lineitem.model.LineItem;
 import it.arrive.invoicesystem.lineitem.repository.LineItemRepository;
@@ -29,7 +29,8 @@ public class LineItemServiceImpl implements LineItemService {
     private final PaginationProperties paginationProperties;
 
     @Override
-    public LineItem createLineItem( InvoiceLineItem lineItem ) {
+    public LineItem createLineItem( BasicLineItemWithDescAndPrice lineItem ) {
+        validator.validateLineItem( lineItem );
         LineItem savedItem = repository.save( transformer.toLineItem( lineItem ) );
         log.info( "LineItem with SKU '{}' had been saved", savedItem.getSku() );
         return savedItem;

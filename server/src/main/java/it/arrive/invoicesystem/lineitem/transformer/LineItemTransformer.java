@@ -1,6 +1,5 @@
 package it.arrive.invoicesystem.lineitem.transformer;
 
-import it.arrive.invoicesystem.invoice.dto.InvoiceLineItem;
 import it.arrive.invoicesystem.lineitem.dto.BasicLineItemWithDescAndPrice;
 import it.arrive.invoicesystem.lineitem.dto.LineItemsResponse;
 import it.arrive.invoicesystem.lineitem.model.LineItem;
@@ -31,7 +30,7 @@ public class LineItemTransformer {
                 .build();
     }
 
-    public LineItem toLineItem( InvoiceLineItem lineItem ) {
+    public LineItem toLineItem( BasicLineItemWithDescAndPrice lineItem ) {
         return modelMapper.map( lineItem, LineItem.class );
     }
 
