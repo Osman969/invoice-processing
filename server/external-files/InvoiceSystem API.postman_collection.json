@@ -1,0 +1,176 @@
+{
+	"info": {
+		"_postman_id": "1708d39b-e602-41d2-8cbd-b915d4ed5615",
+		"name": "InvoiceSystem API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16084242"
+	},
+	"item": [
+		{
+			"name": "Create Line Item",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"sku\": \"SKU002\",\n  \"quantity\": 5,\n  \"price\": 19.99,\n  \"description\": \"Test item\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/lineItem",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"lineItem"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Line Items",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/lineItems",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"lineItems"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Invoice",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"customerEmail\": \"customer@example.com\",\n  \"items\": [\n    {\n      \"sku\": \"SKU002\",\n      \"quantity\": 2\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/invoice",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"invoice"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Invoices",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/invoices",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"invoices"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Single Invoice by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/invoice/{{invoiceId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"invoice",
+						"{{invoiceId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Item to Invoice",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/invoice/{{invoiceId}}/item/{{itemSkuCode}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"invoice",
+						"{{invoiceId}}",
+						"item",
+						"{{itemSkuCode}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Pay Invoice",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"paymentMethod\": \"CASH\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/invoice/{{invoiceId}}/pay",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"invoice",
+						"{{invoiceId}}",
+						"pay"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

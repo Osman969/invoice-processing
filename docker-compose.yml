@@ -1,0 +1,46 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/invoiceprocessingsystem
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network  
+      
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATASOURCE_PASSWORD}
+      MYSQL_DATABASE: invoiceprocessingsystem
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network      
+
+  frontend:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network  
+     
+volumes:
+  mysql-data:     
+
+networks:
+  app-network:
+    driver: bridge
