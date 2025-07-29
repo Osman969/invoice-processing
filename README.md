@@ -33,7 +33,7 @@ If the project doesn't already include `mvnw`:
 in server directory:
 ```bash
 mvn -N io.takari:maven:wrapper
-
+```
 3. In project directory Run the following command to start all services:
 
 ```bash
