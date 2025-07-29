@@ -27,7 +27,14 @@ The services are connected on a custom Docker network called `app-network`.
 
 1. Clone the repository and navigate to the project root where the `docker-compose.yml` file is located.
 
-2. Run the following command to start all services:
+### Step 2: Generate Maven Wrapper (only once)
+If the project doesn't already include `mvnw`:
+
+in server directory:
+```bash
+mvn -N io.takari:maven:wrapper
+
+3. In project directory Run the following command to start all services:
 
 ```bash
 docker-compose up --build
