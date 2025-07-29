@@ -18,6 +18,7 @@ import it.arrive.invoicesystem.invoice.validator.InvoiceValidator;
 import it.arrive.invoicesystem.lineitem.model.LineItem;
 import it.arrive.invoicesystem.lineitem.services.LineItemService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InvoiceServiceImpl implements InvoiceService {
 
     private static final String ITEM_NOT_FOUND = "Item with SKU code '%s' not found";
@@ -60,7 +62,9 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .map( item -> dbItemMap.get( item.getSku() ) )
                 .collect( Collectors.toList() );
         invoice.setItems( resolvedItems );
-        return repository.save( invoice );
+        Invoice saved = repository.save( invoice );
+        log.debug( "Created invoice with ID '{}'.", saved.getId() );
+        return saved;
     }
 
     @Override
@@ -72,8 +76,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.addItem( item );
         repository.save( invoice );
         if ( itemService.decrementQuantityBySku( itemSkuCode, 1 ) == 0 ) {
+            log.error( "Item with SKU '{}' is out of stock after decrement.", itemSkuCode );
             throw new OutOfStockException( OUT_OF_STOCK_ERROR.formatted( itemSkuCode ) );
         }
+        log.debug( "Added item with SKU '{}' to invoice '{}'.", itemSkuCode, invoiceId );
     }
 
     @Override
@@ -88,6 +94,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setPaymentInfo( transformer.toPaymentInfo( paymentMethod, items ) );
         invoice.setInvoicePaymentStatus( InvoicePaymentStatus.PAID );
         repository.save( invoice );
+        log.debug( "Invoice '{}' had been paid successfully.", invoiceId );
     }
 
     @Override
@@ -125,6 +132,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         return itemService.getLineItemBySkyCode( itemSkuCode )
                 .map( item -> {
                     if ( item.getQuantity() < 1 ) {
+                        log.error( "Item with SKU '{}' is out of stock", itemSkuCode );
                         throw new OutOfStockException( OUT_OF_STOCK_ERROR.formatted( itemSkuCode ) );
                     }
                     return item;
@@ -134,6 +142,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     private void throwExceptionIfAlreadyPaidInvoice( Invoice invoice ) {
         if ( invoice.getInvoicePaymentStatus() == InvoicePaymentStatus.PAID ) {
+            log.error( "Attempt to modify already paid invoice with ID '{}'", invoice.getId() );
             throw new InvoiceAlreadyPaidException( ALREADY_PAID_ERROR.formatted( invoice.getId() ) );
         }
     }
@@ -148,9 +157,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                             LineItem lineItem = itemService.getLineItemBySkyCode( itemSkuCode )
                                     .orElseThrow( () -> new ResourceNotFoundException( ITEM_NOT_FOUND.formatted( itemSkuCode ) ) );
                             if ( lineItem.getQuantity() < count ) {
+                                log.error( "Item with SKU '{}' is out of stock for requested quantity {}", itemSkuCode, count );
                                 throw new OutOfStockException( OUT_OF_STOCK_ERROR.formatted( itemSkuCode ) );
                             }
                             if ( itemService.decrementQuantityBySku( itemSkuCode, count ) == 0 ) {
+                                log.error( "Item with SKU '{}' is out of stock after decrement", itemSkuCode );
                                 throw new OutOfStockException( OUT_OF_STOCK_ERROR.formatted( itemSkuCode ) );
                             }
                             return lineItem;

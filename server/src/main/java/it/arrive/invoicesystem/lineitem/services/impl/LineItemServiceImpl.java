@@ -9,6 +9,7 @@ import it.arrive.invoicesystem.lineitem.services.LineItemService;
 import it.arrive.invoicesystem.lineitem.transformer.LineItemTransformer;
 import it.arrive.invoicesystem.lineitem.validator.ItemValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LineItemServiceImpl implements LineItemService {
 
     private final ItemValidator validator;
@@ -28,7 +30,9 @@ public class LineItemServiceImpl implements LineItemService {
 
     @Override
     public LineItem createLineItem( InvoiceLineItem lineItem ) {
-        return repository.save( transformer.toLineItem( lineItem ) );
+        LineItem savedItem = repository.save( transformer.toLineItem( lineItem ) );
+        log.info( "LineItem with SKU '{}' had been saved", savedItem.getSku() );
+        return savedItem;
     }
 
     @Override
