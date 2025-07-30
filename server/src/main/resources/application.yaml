@@ -15,4 +15,4 @@ spring:
 arrive:
   app:
     pagination:
-      default-page-size: 40
+      default-page-size: 4
