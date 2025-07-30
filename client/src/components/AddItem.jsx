@@ -2,6 +2,7 @@ import { Box, Button, TextField, Typography, styled } from "@mui/material";
 import { useState } from "react";
 import { saveItem } from "../services/api";
 import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 
 const BoxComponent = styled(Box)({
     marginTop: 20,
@@ -65,9 +66,20 @@ const AddItem = ({ setAddItem }) => {
             price: Number(item.price),
             amount: Number(item.amount)
         };
-        await saveItem(itemToSave);
-        setAddItem(false);
-    };
+
+        try {
+            const result = await saveItem(itemToSave);
+            if (result.status == 201) {
+                toast.success(result.data.message);
+            } else {
+                toast.error("Error: " + result.message);
+            }
+        } catch (err) {
+                toast.error("Failed to Save Item. Please try again later.");
+        } finally {
+            setAddItem(false);
+        }
+    }
 
     return (
         <BoxComponent>

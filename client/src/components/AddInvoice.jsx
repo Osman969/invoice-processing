@@ -1,7 +1,8 @@
 import { Box, Button, TextField, Typography, styled } from "@mui/material";
 import { useState } from "react";
 import { saveInvoice } from "../services/api";
-import PropTypes from 'prop-types'
+import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 
 const BoxComponent = styled(Box)({
     marginTop: 20,
@@ -28,8 +29,18 @@ const AddInvoice = ({ setAddInvoice }) => {
     }
 
     const addNewInvoice = async () => {
-        await saveInvoice({ ...invoice, amount: Number(invoice['amount']) });
-        setAddInvoice(false);
+        try {
+            const result = await saveInvoice({ ...invoice, amount: Number(invoice['amount']) });
+            if (result.status == 201) {
+                toast.success(result.data.message);
+            } else {
+                toast.error("Error: " + result.message);
+            }
+        } catch (err) {
+                toast.error("Failed to Save Invoice. Please try again later.");
+        } finally {
+            setAddInvoice(false);
+        }
     }
 
     return (
